@@ -1,0 +1,10 @@
+dataset:
+  name_dataset: 'roneneldan/TinyStories'
+  raw_save_path: 'basemodel/data/raw/'
+  processed_save_path: 'basemodel/data/processed/'
+  split: 'train[:50000]'
+
+tokenizer:
+  vocab_size: 16000
+  vocab_path: 'basemodel/data/tokenizer/'
+  merges_path: 'basemodel/data/tokenizer/'
