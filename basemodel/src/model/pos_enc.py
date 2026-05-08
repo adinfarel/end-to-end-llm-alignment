@@ -26,9 +26,9 @@ class RotaryPositionalEncoding(nn.Module):
         self.register_buffer("inv_freq", inv_freq)
     
     def forward(self, x: torch.tensor):
-        B, T, C = x.shape
+        T, C = x.shape[-2], x.shape[-1]
         assert C == self.dim
-        l = torch.arange(T, dtype=self.theta.dtype) # [0, 1, 2, ..., L]
+        l = torch.arange(T, dtype=self.inv_freq.dtype) # [0, 1, 2, ..., L]
         theta = torch.einsum("i,j->ij", l, self.inv_freq) # (l, inv_freq)
         hat_theta = torch.cat([theta, theta], axis=-1) # (l, inv_freq + inv_freq)
         sin = torch.sin(hat_theta) # (l, hat_theta)
