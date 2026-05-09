@@ -62,7 +62,7 @@ def main(config: TrainConfig):
             losses = eval_loss(model=model, data=data, config=CONFIG['models'], device=DEVICE)
             print(f"Step {iter} | Eval Loss: {losses}")
         
-        xb, yb = get_batch(xb, yb)
+        xb, yb = get_batch(data=data, batch_size=CONFIG['models']['training']['batch_size'], block_size=CONFIG['models']['training']['block_size'])
         
         logits, loss = model(xb, yb)
         optimizer.zero_grad(set_to_none=True)

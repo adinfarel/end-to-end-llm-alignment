@@ -39,11 +39,6 @@ class GPTConfig:
             block_size=training['block_size'],
             dropout=training['dropout'],
             n_blocks=training['n_blocks'],
-            model_save_path=training['model_save_path'],
-            training=training['training'],
-            max_iters=eval['max_iters'],
-            eval_interval=eval['eval_interval'],
-            eval_iters=eval['eval_iters']
         )
 
 
@@ -53,19 +48,18 @@ class AlmondGPTModel(nn.Module):
         self.config = GPTConfig.config(config_path)
         self.vocab_size = self.config.vocab_size
         self.embedding = Embedding(self.vocab_size, self.config.embedding_dim)
-        self.pos_enc = LearnedPositionalEnc(self.config.block_size, self.config.block_size)
-        self.blocks = nn.Sequential(
+        self.blocks = nn.ModuleList(
             *[Block(n_embd=self.config.embedding_dim, n_heads=self.config.n_head,
                     dropout=self.config.dropout, block_size=self.config.block_size) for _ in range(self.config.n_blocks)]
         )
         self.ln_f = nn.LayerNorm(self.config.embedding_dim)
         self.lm_head = nn.Linear(self.config.embedding_dim, self.vocab_size)
     
-    def forward(self, x, targets=None):
+    def forward(self, x, targets=None, use_cache=False):
         B, T = x.shape
         x = self.embedding(x)
-        x = self.pos_enc(x)
-        x = self.blocks(x)
+        for block in self.blocks:
+            x = block(x, use_cache=use_cache)
         x = self.ln_f(x)
         logits = self.lm_head(x)
         
@@ -77,14 +71,21 @@ class AlmondGPTModel(nn.Module):
             loss = F.cross_entropy(logits, targets.view(-1))
         
         return logits, loss
+
+    def clear_kv_cache(self):
+        for block in self.blocks:
+            if hasattr(block.attn, "attn") and hasattr(block.attn, "clear_cache"):
+                block.attn.clear_cache()
     
+    @torch.no_grad()
     def generate(self, idx, max_new_tokens):
-        for _ in range(max_new_tokens):
-            curr_idx = idx[:, -self.config.block_size:]
+        self.clear_kv_cache()
+        for i in range(max_new_tokens):
+            curr_idx = idx if i == 0 else idx[:, -1:]
             
-            logits, _ = self(curr_idx)
+            logits, _ = self(curr_idx, use_cache=True)
             logits = logits[:, -1, :] # Last Token
-            probs = F.softmax(logits, dim=-1, keepdim=True)
+            probs = F.softmax(logits, dim=-1)
             next_token = torch.multinomial(probs, num_samples=1)
             idx = torch.cat((curr_idx, next_token), dim=1)
             

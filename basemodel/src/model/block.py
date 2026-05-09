@@ -20,7 +20,7 @@ class Block(nn.Module):
         self.ln1 = normalization.RMSNorm(n_embd)
         self.ln2 = normalization.RMSNorm(n_embd)
     
-    def forward(self, x):
-        x = x + self.attn(self.ln1(x))
+    def forward(self, x, use_cache=False):
+        x = x + self.attn(self.ln1(x), use_cache=use_cache)
         x = x + self.ffwd(self.ln2(x))
         return x

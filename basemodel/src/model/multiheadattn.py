@@ -88,8 +88,12 @@ class GroupQueryAttention(nn.Module):
         
         # RoPE
         self.rope = RotaryPositionalEncoding(self.head_size)
+        
+        # KV-Cache
+        self.register_buffer("cache_key", None, persistent=False)
+        self.register_buffer("cache_value", None, persistent=False)
     
-    def forward(self, x: torch.tensor):
+    def forward(self, x: torch.tensor, use_cache=False):
         B, T, C = x.shape
         
         Q = self.query(x)
@@ -101,17 +105,30 @@ class GroupQueryAttention(nn.Module):
         K = K.view(B, T, self.n_kv_heads, self.head_size).transpose(1, 2) # (B, n_kv_heads, T, head_size)
         V = V.view(B, T, self.n_kv_heads, self.head_size).transpose(1, 2) # (B, n_kv_heads, T, head_size)
         
-        Q = self.rope(Q)
-        K = self.rope(K)
+        seq_offset = self.cache_key.shape[2] if (use_cache and self.cache_key is not None) else 0
         
-        K = K.repeat_interleave(self.num_queries_per_kv_head, dim=1)
-        V = V.repeat_interleave(self.num_queries_per_kv_head, dim=1)
+        Q = self.rope(Q, seq_offset=seq_offset)
+        K_rope = self.rope(K, seq_offset=seq_offset)
         
+        if use_cache:
+            if self.cache_key is None:
+                self.cache_key, self.cache_value = K_rope, V
+            else:
+                self.cache_key = torch.cat([self.cache_key, K_rope], dim=2)
+                self.cache_value = torch.cat([self.cache_value, V], dim=2)
+            keys, values = self.cache_key, self.cache_value
+        else:
+            keys, values = K_rope, V
+        
+        keys = keys.repeat_interleave(self.num_queries_per_kv_head, dim=1)
+        values = values.repeat_interleave(self.num_queries_per_kv_head, dim=1)
+        
+        is_causal = True if T > 1 else False
         out = F.scaled_dot_product_attention(
             query=Q,
-            key=K,
-            value=V,
-            is_causal=True,
+            key=keys,
+            value=values,
+            is_causal=is_causal,
             dropout_p=self.dropout if self.training else 0.0,
         )
         
@@ -124,3 +141,8 @@ class GroupQueryAttention(nn.Module):
             out = F.dropout(out, p=self.dropout)
         
         return out
+
+    def clear_cache(self):
+        self.cache_key = None
+        self.cache_value = None
+        print("KV cache cleared.")
