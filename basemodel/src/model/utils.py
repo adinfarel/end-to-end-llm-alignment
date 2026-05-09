@@ -26,7 +26,7 @@ def eval_loss(model: nn.Module, data: np.ndarray, config, device='cpu'):
     for _ in range(config['eval']['eval_iters']):
         xb, yb = get_batch(data=data, batch_size=config['training']['batch_size'], block_size=config['training']['block_size'])
         xb, yb = xb.to(device=device), yb.to(device=device)
-        logits, loss = model(xb, yb)
+        logits, loss = model(xb, yb, use_cache=False)
         losses.append(loss.item())
     model.train()
     return sum(losses) / len(losses)

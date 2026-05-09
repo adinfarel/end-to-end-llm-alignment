@@ -5,6 +5,7 @@ Train model, piece by piece
 '''
 
 import torch
+import os
 from dataclasses import dataclass
 
 from basemodel.src.model.gpt import AlmondGPTModel
@@ -18,14 +19,15 @@ CONFIG = load_yaml(YAML_PATH)
 PROCESSED_DATA_PATH = CONFIG['dataset']['processed_save_path'] + 'corpus.bin'
 VOCAB_PATH = CONFIG['tokenizer']['vocab_path'] + 'vocab.json'
 MERGES_PATH = CONFIG['tokenizer']['merges_path'] + 'merges.json'
-MODEL_SAVE_PATH = CONFIG['models']['training']['model_save_path'] + 'gpt_1.pt'
+MODEL_SAVE_DIR = CONFIG['models']['training']['MODEL_SAVE_DIR']
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DTYPE = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
 # ------------------------------
 
 @dataclass
 class TrainConfig:
     learning_rate: float
-    model_save_path: str
+    MODEL_SAVE_DIR: str
     training: bool
     max_iters: int
     eval_interval: int
@@ -36,7 +38,7 @@ class TrainConfig:
         cfg = load_yaml(yaml_path)['models']
         return cls(
             learning_rate=cfg['training']['learning_rate'],
-            model_save_path=cfg['training']['model_save_path'],
+            MODEL_SAVE_DIR=cfg['training']['MODEL_SAVE_DIR'],
             training=cfg['training']['training'],
             max_iters=cfg['eval']['max_iters'],
             eval_interval=cfg['eval']['eval_interval'],
@@ -44,6 +46,7 @@ class TrainConfig:
         )
 
 def main(config: TrainConfig):
+    os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
     # Initialize model and tokenizer
     tokenizer = AlmondTokenizerGPT(config_path=YAML_PATH)
     model = AlmondGPTModel(config_path=YAML_PATH).to(device=DEVICE)
@@ -57,20 +60,47 @@ def main(config: TrainConfig):
     # Training
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     
+    best_val_loss = float('inf')
+    scaler = torch.cuda.amp.GradScaler(enabled=(DTYPE == torch.float16))
+    
     for iter in range(config.max_iters):
         if iter % config.eval_interval == 0:
             losses = eval_loss(model=model, data=data, config=CONFIG['models'], device=DEVICE)
-            print(f"Step {iter} | Eval Loss: {losses}")
+            print(f"Step {iter} | Eval Loss: {losses:.4f}")
+            
+            if losses < best_val_loss:
+                best_val_loss = losses
+                checkpoint = {
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'iter': iter,
+                    'best_val_loss': best_val_loss,
+                    'config': config,
+                }
+                torch.save(checkpoint, os.path.join(MODEL_SAVE_DIR, 'best_model.pt'))
+                print(f"--> New best model saved at step {iter} with loss {best_val_loss:.4f}")
         
         xb, yb = get_batch(data=data, batch_size=CONFIG['models']['training']['batch_size'], block_size=CONFIG['models']['training']['block_size'])
+        xb, yb = xb.to(device=DEVICE), yb.to(device=DEVICE)
         
-        logits, loss = model(xb, yb)
+        with torch.autocast(device_type='cuda', dtype=DTYPE):
+            logits, loss = model(xb, yb, use_cache=False)
+            
         optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        
+        scaler.step(optimizer)
+        scaler.update()
     
-    torch.save(model.state_dict(), MODEL_SAVE_PATH)
-    print(f"Training done. Model save at {MODEL_SAVE_PATH}")
+    torch.save({
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'iter': config.max_iters,
+    }, os.path.join(MODEL_SAVE_DIR, 'ckpt_latest.pt'))
+    print(f"Training done. Model save at {MODEL_SAVE_DIR}")
 
 if __name__ == "__main__":
     config = TrainConfig.config(YAML_PATH)
