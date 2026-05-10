@@ -6,5 +6,24 @@ dataset:
 
 tokenizer:
   vocab_size: 16000
-  vocab_path: 'basemodel/data/tokenizer/'
-  merges_path: 'basemodel/data/tokenizer/'
+  vocab_path: 'basemodel/models/tokenizer/'
+  merges_path: 'basemodel/models/tokenizer/'
+
+models:
+  training:
+    embedding_dim: 256
+    batch_size: 32
+    n_head: 8
+    learning_rate: 0.001
+    block_size: 128
+    dropout: 0.1
+    n_blocks: 6
+    model_save_dir: 'basemodel/models/checkpoints/'
+    training: true
+    early_stopping: true
+    early_stopping_patience: 5
+  
+  eval:
+    max_iters: 5000
+    eval_interval: 500
+    eval_iters: 200
