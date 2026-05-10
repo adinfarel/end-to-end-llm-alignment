@@ -1,5 +1,5 @@
 '''
-data/tokenizer/bpe.py
+src/tokenizer/bpe.py
 
 Tokenize text to numeric based on vocab with algorithmic BPE
 '''
@@ -108,6 +108,10 @@ class AlmondTokenizerGPT:
     @property
     def get_merges(self) -> Dict:
         return self.merges
+    
+    @property
+    def get_vocab_size(self) -> int:
+        return len(self.vocab)
     
     def save(self, vocab_path: str, merges_path: str) -> None:
         try:

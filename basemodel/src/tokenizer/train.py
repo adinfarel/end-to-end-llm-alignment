@@ -4,7 +4,7 @@ src/tokenizer/train.py
 Train BPE to get vocab and merges >.<
 '''
 
-from utils.common import load_yaml
+from utils.common import load_yaml, save_yaml
 from basemodel.src.tokenizer.bpe import AlmondTokenizerGPT
 
 # -------------------------------
@@ -27,6 +27,10 @@ def train_tokenizer(raw_data_path: str, vocab_path: str, merges_path: str):
     print(f"Training BPE starting..., Please wait for a minute...")
     tokenizer.train(text)
     
+    actual_vocab_size = tokenizer.get_vocab_size
+    print(f"Actual vocab size after training: {actual_vocab_size}")
+    CONFIG['tokenizer']['vocab_size'] = actual_vocab_size
+    save_yaml(YAML_PATH, CONFIG)
     print(f"Training done. Save vocabulary and merges.")
     tokenizer.save(vocab_path, merges_path)
     
