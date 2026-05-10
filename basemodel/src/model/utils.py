@@ -14,8 +14,8 @@ def get_batch(data, batch_size, block_size):
     """
     ix = torch.randint(len(data) - block_size, (batch_size,))
     
-    x = torch.stack([torch.tensor(data[i:i+block_size]) for i in ix])
-    y = torch.stack([torch.tensor(data[i+1:i+block_size+1]) for i in ix])
+    x = torch.stack([torch.tensor(data[i:i+block_size], dtype=torch.long) for i in ix])
+    y = torch.stack([torch.tensor(data[i+1:i+block_size+1], dtype=torch.long) for i in ix])
     
     return x, y
 
