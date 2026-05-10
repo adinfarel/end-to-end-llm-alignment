@@ -71,17 +71,18 @@ def load_bin(file_path: str) -> np.ndarray:
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {e}")
 
-def save_model(model: torch.nn.Module, file_path: str) -> None:
+def save_model(checkpoint: Dict, file_path: str) -> None:
     if not os.path.exists(os.path.dirname(file_path)):
         print(f"Create directory for path: {file_path}")
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
     
-    torch.save(model, file_path)
+    torch.save(checkpoint, file_path)
     print(f"Model successfully saved in: {file_path}")
 
-def load_model(model: torch.nn.Module, file_path: str) -> torch.nn.Module:
+def load_model(model: torch.nn.Module, file_path: str, device: str) -> torch.nn.Module:
     try:
-        model.load_state_dict(torch.load(file_path))
+        checkpoint = torch.load(file_path, map_location=device, weights_only=True)
+        model.load_state_dict(checkpoint['model'])
         print(f"Model weights successfully loaded from: {file_path}")
         return model
     except FileNotFoundError as e:
