@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from basemodel.src.model.gpt import AlmondGPTModel
 from basemodel.src.tokenizer.bpe import AlmondTokenizerGPT
 from basemodel.src.model.utils import get_batch, eval_loss
-from utils.common import load_yaml, load_bin
+from utils.common import load_yaml, load_bin, save_model
 
 # ------------------------------
 YAML_PATH = 'basemodel/config.yaml'
@@ -32,20 +32,24 @@ class TrainConfig:
     max_iters: int
     eval_interval: int
     eval_iters: int
+    early_stopping: bool
+    early_stopping_patience: int
     
     @classmethod
     def config(cls, yaml_path: str):
         cfg = load_yaml(yaml_path)['models']
         return cls(
             learning_rate=cfg['training']['learning_rate'],
-            MODEL_SAVE_DIR=cfg['training']['MODEL_SAVE_DIR'],
+            MODEL_SAVE_DIR=cfg['training']['model_save_dir'],
             training=cfg['training']['training'],
             max_iters=cfg['eval']['max_iters'],
             eval_interval=cfg['eval']['eval_interval'],
             eval_iters=cfg['eval']['eval_iters'],
+            early_stopping=cfg['training']['early_stopping'],
+            early_stopping_patience=cfg['training']['early_stopping_patience'],
         )
 
-def main(config: TrainConfig):
+def main(config: TrainConfig, early_stopping: bool = True):
     os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
     # Initialize model and tokenizer
     tokenizer = AlmondTokenizerGPT(config_path=YAML_PATH)
@@ -62,13 +66,15 @@ def main(config: TrainConfig):
     
     best_val_loss = float('inf')
     scaler = torch.cuda.amp.GradScaler(enabled=(DTYPE == torch.float16))
-    
+    early_stopping_counter = 0
+    early_stopping_patience = config.early_stopping_patience
     for iter in range(config.max_iters):
         if iter % config.eval_interval == 0:
             losses = eval_loss(model=model, data=data, config=CONFIG['models'], device=DEVICE)
             print(f"Step {iter} | Eval Loss: {losses:.4f}")
             
             if losses < best_val_loss:
+                early_stopping_counter = 0
                 best_val_loss = losses
                 checkpoint = {
                     'model': model.state_dict(),
@@ -77,13 +83,18 @@ def main(config: TrainConfig):
                     'best_val_loss': best_val_loss,
                     'config': config,
                 }
-                torch.save(checkpoint, os.path.join(MODEL_SAVE_DIR, 'best_model.pt'))
+                save_model(model=checkpoint, file_path=os.path.join(MODEL_SAVE_DIR, 'best_model.pt'))
                 print(f"--> New best model saved at step {iter} with loss {best_val_loss:.4f}")
+            else:
+                early_stopping_counter += 1
+                if early_stopping and early_stopping_counter >= early_stopping_patience:
+                    print(f"--> Early stopping at step {iter}")
+                    break
         
         xb, yb = get_batch(data=data, batch_size=CONFIG['models']['training']['batch_size'], block_size=CONFIG['models']['training']['block_size'])
         xb, yb = xb.to(device=DEVICE), yb.to(device=DEVICE)
         
-        with torch.autocast(device_type='cuda', dtype=DTYPE):
+        with torch.autocast(device_type=DEVICE, dtype=DTYPE, enabled=(DEVICE == 'cuda')):
             logits, loss = model(xb, yb, use_cache=False)
             
         optimizer.zero_grad(set_to_none=True)
@@ -95,13 +106,13 @@ def main(config: TrainConfig):
         scaler.step(optimizer)
         scaler.update()
     
-    torch.save({
+    save_model(model={
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict(),
         'iter': config.max_iters,
-    }, os.path.join(MODEL_SAVE_DIR, 'ckpt_latest.pt'))
+    }, file_path=os.path.join(MODEL_SAVE_DIR, 'ckpt_latest.pt'))
     print(f"Training done. Model save at {MODEL_SAVE_DIR}")
 
 if __name__ == "__main__":
     config = TrainConfig.config(YAML_PATH)
-    main(config)
+    main(config, early_stopping=config.early_stopping)

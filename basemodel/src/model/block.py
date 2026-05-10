@@ -16,7 +16,7 @@ class Block(nn.Module):
         assert n_embd % n_heads == 0, "n_heads must be divide n_embd with result = 0"
         # head_size = n_embd // n_heads
         self.attn = multiheadattn.GroupQueryAttention(n_embd=n_embd, n_q_head=n_heads, n_kv_heads=n_heads//2, dropout=dropout)
-        self.ffwd = ffwd.FeedForward(n_embd=n_embd, dropout=dropout)
+        self.ffwd = ffwd.SwiGLUFFN(n_embd=n_embd, dropout=dropout)
         self.ln1 = normalization.RMSNorm(n_embd)
         self.ln2 = normalization.RMSNorm(n_embd)
     
