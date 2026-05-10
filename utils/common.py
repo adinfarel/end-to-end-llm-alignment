@@ -7,6 +7,7 @@ Utility for common needs for code
 import json
 import yaml
 import os
+import torch
 import numpy as np
 from typing import Dict, Any
 
@@ -67,5 +68,21 @@ def load_bin(file_path: str) -> np.ndarray:
         data = np.memmap(file_path, dtype=np.uint16, mode='r')
         print(f"Binary data successfully loaded.")
         return data
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"File not found: {e}")
+
+def save_model(model: torch.nn.Module, file_path: str) -> None:
+    if not os.path.exists(os.path.dirname(file_path)):
+        print(f"Create directory for path: {file_path}")
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    
+    torch.save(model, file_path)
+    print(f"Model successfully saved in: {file_path}")
+
+def load_model(model: torch.nn.Module, file_path: str) -> torch.nn.Module:
+    try:
+        model.load_state_dict(torch.load(file_path))
+        print(f"Model weights successfully loaded from: {file_path}")
+        return model
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {e}")
