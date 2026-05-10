@@ -1,14 +1,9 @@
 dataset:
-  name_dataset: 'roneneldan/TinyStories'
-  raw_save_path: 'basemodel/data/raw/'
-  processed_save_path: 'basemodel/data/processed/'
-  split: 'train[:50000]'
-
-tokenizer:
-  vocab_size: 16000
-  vocab_path: 'basemodel/models/tokenizer/'
-  merges_path: 'basemodel/models/tokenizer/'
-
+  name_dataset: roneneldan/TinyStories
+  processed_save_path: basemodel/data/processed/
+  raw_save_path: basemodel/data/raw/
+  split: train[:50000]
+  
 models:
   training:
     embedding_dim: 256
@@ -27,3 +22,8 @@ models:
     max_iters: 5000
     eval_interval: 500
     eval_iters: 200
+
+tokenizer:
+  merges_path: basemodel/models/tokenizer/
+  vocab_path: basemodel/models/tokenizer/
+  vocab_size: 5848
