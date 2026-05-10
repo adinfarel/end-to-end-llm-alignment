@@ -3,7 +3,8 @@ src/pipeline/main.py
 
 This is the main file for the entire pipeline of training the tokenizer and the model. It will call the train.py files in both tokenizer and model directories to execute the training process.
 '''
-
+import os
+import sys
 from basemodel.src.tokenizer.train import train_tokenizer
 from basemodel.src.data.load import load_datasets
 from basemodel.src.data.processed import processed_corpus
@@ -12,6 +13,7 @@ from basemodel.src.model.train import TrainConfig
 from utils.common import load_yaml
 
 # -------------------------------
+sys.path.inser(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 YAML_PATH = "basemodel/config.yaml"
 CONFIG = load_yaml(YAML_PATH)
 # -------------------------------
