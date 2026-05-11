@@ -91,3 +91,17 @@ class AlmondGPTModel(nn.Module):
             idx = torch.cat((idx, next_token), dim=1)
             
         return idx
+
+    @torch.no_grad()
+    def generate_stream(self, idx, max_new_tokens):
+        self.clear_kv_cache()
+        for i in range(max_new_tokens):
+            curr_idx = idx if i == 0 else idx[:, -1:]
+            
+            logits, _ = self(curr_idx, use_cache=True)
+            logits = logits[:, -1, :] # Last Token
+            probs = F.softmax(logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+            idx = torch.cat((idx, next_token), dim=1)
+
+            yield next_token.item()
