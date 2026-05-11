@@ -28,7 +28,7 @@ class Datasets:
 
 def load_datasets(yaml_path):
     print("=============LOADED DATASET=============")
-    config = Datasets.config(yaml_path=yaml_path)
+    config = Datasets.config(config_path=yaml_path)
     ds = load_dataset(config.name_dataset, split=config.split)
     
     print(f"Dataset successfully load from HuggingFace.")

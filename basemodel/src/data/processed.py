@@ -13,7 +13,7 @@ YAML_PATH = "basemodel/config.yaml"
 CONFIG = load_yaml(YAML_PATH)
 # --------------------------------
 
-def processed_corpus(raw_data_path: str, processed_data_path: str, vocab_path: str, marges_path: str):
+def processed_corpus(raw_data_path: str, processed_data_path: str, vocab_path: str, merges_path: str):
     print(f"Initialized tokenizer...")
     tokenizer = AlmondTokenizerGPT(YAML_PATH)
     try:
