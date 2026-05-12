@@ -49,7 +49,7 @@ def load_txt_to_list(input_path: str) -> list:
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {e}")
 
-def split_data(data_list: list, train_ratio: float = 0.8) -> tuple:
+def split_data(data_list: list, train_ratio: float = 0.8, test_ratio: float = 0.1) -> tuple:
     '''Split data into train, test, and validation sets >.<
     
     Args:
@@ -61,7 +61,7 @@ def split_data(data_list: list, train_ratio: float = 0.8) -> tuple:
     '''
     total_samples = len(data_list)
     train_portion = int(total_samples * train_ratio)
-    test_portion = int(total_samples * (1 - train_ratio))
+    test_portion = int(total_samples * test_ratio)
     
     train_data = data_list[:train_portion]
     test_data = data_list[train_portion:train_portion + test_portion]
