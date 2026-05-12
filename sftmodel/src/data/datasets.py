@@ -16,7 +16,7 @@ class InstructionDataset(Dataset):
         
         for text in self.data:
             tokenized_data = tokenizer.encode(text)
-            self.encoded_texts.append(tokenized_data)
+            self.encoded_texts.append(tokenized_data) 
     
     def __len__(self) -> int:
         return len(self.data)
@@ -32,7 +32,7 @@ def collate_fn(
     device: torch.device = 'cpu'
 ):
     batch_max_length = max(len(x) + 1 for x in batch)
-    batch_max_length = min(batch_max_length, max_length + 1)
+    batch_max_length = min(batch_max_length, max_length + 1) # Ensure batch_max_length does not exceed max_length + 1
     
     input_lst, target = [], []
     append = input_lst.append; append_target = target.append # Optimization: Cache the append methods to avoid attribute lookups in the loop
