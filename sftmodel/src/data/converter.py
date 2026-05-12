@@ -9,7 +9,7 @@ import os
 
 # --------------------------------
 RAW_DATA_INSTRUCTION_PATH = r'sftmodel\data\raw\instructions.txt'
-RAW_DATA_OUTPUT_PATH = r'sftmodel\data\processed\instructions.jsonl'
+RAW_DATA_OUTPUT_PATH = r'sftmodel\data\raw\instructions.jsonl'
 # --------------------------------
 
 def convert_txt_to_jsonl(input_path: str, output_path: str) -> None:
