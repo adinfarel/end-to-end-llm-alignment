@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 
 class InstructionDataset(Dataset):
     def __init__(self, data_list: list, tokenizer: AlmondTokenizerGPT, device: torch.device) -> None:
-        self.data = data_list
+        self.data = data_list # List of raw text data samples
         self.encoded_texts = []
         
         for text in self.data:
