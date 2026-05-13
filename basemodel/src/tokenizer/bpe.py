@@ -5,6 +5,7 @@ Tokenize text to numeric based on vocab with algorithmic BPE
 '''
 
 import json
+import re
 from utils.common import load_yaml, save_json, load_json
 from tqdm import tqdm
 from typing import List, Tuple, Dict
@@ -79,15 +80,38 @@ class AlmondTokenizerGPT:
         return new_ids
 
     def encode(self, text: str) -> List[int]:
-        ids = list(text.encode('utf-8'))
-        while len(ids) >= 2:
-            stats = self.get_stats(ids)
-            best_pair = min(stats, key=lambda pair: self.merges.get(pair, float('inf')))
-            if best_pair not in self.merges:
-                break
-            ids = self.merge_pair(best_pair, ids, self.merges[best_pair])
-        print(f"Encode text to token successfully: {ids[:10]}")
+        pattern = '(' + '|'.join(re.escape(t) for t in self.SPECIAL_TOKEN) + ')'
+        parts = re.split(pattern, text)
+        
+        ids = []
+        for part in parts:
+            if part in self.SPECIAL_TOKEN:
+                special_idx = self.SPECIAL_TOKEN.index(part)
+                vocab_id = self.single_byte_size + special_idx
+                ids.append(vocab_id)
+
+            else:
+                if not part:
+                    continue
+                byte_ids = list(part.encode('utf-8'))
+                while len(byte_ids) >= 2:
+                    stats = self.get_stats(byte_ids)
+                    best_pair = min(stats, key=lambda pair: self.merges.get(pair, float('inf')))
+                    if best_pair not in self.merges:
+                        break
+                    byte_ids = self.merge_pair(best_pair, byte_ids, self.merges[best_pair])
+                ids.extend(byte_ids)
         return ids
+                    
+        # ids = list(text.encode('utf-8'))
+        # while len(ids) >= 2:
+        #     stats = self.get_stats(ids)
+        #     best_pair = min(stats, key=lambda pair: self.merges.get(pair, float('inf')))
+        #     if best_pair not in self.merges:
+        #         break
+        #     ids = self.merge_pair(best_pair, ids, self.merges[best_pair])
+        # print(f"Encode text to token successfully: {ids[:10]}")
+        # return ids
     
     def decode(self, ids: List[int]) -> str:
         tokens = b''.join([self.vocab[id] for id in ids])
