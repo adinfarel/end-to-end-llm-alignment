@@ -6,6 +6,7 @@ Convert raw .txt to .jsonl for easy loading in training >.<
 
 import json
 import os
+import random
 
 # --------------------------------
 RAW_DATA_INSTRUCTION_PATH = r'sftmodel\data\raw\instructions.txt'
@@ -35,7 +36,7 @@ def convert_txt_to_jsonl(input_path: str, output_path: str) -> None:
     except Exception as e:
         raise e
 
-    print(f"Conversion completed. {len(samples)} samples written to {output_path}.")\
+    print(f"Conversion completed. {len(samples)} samples written to {output_path}.")
 
 def load_txt_to_list(input_path: str) -> list:
     try:
@@ -49,7 +50,7 @@ def load_txt_to_list(input_path: str) -> list:
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {e}")
 
-def split_data(data_list: list, train_ratio: float = 0.8, test_ratio: float = 0.1) -> tuple:
+def split_data(data_list: list, train_ratio: float = 0.8, test_ratio: float = 0.1, seed: int = 42) -> tuple:
     '''Split data into train, test, and validation sets >.<
     
     Args:
@@ -59,6 +60,11 @@ def split_data(data_list: list, train_ratio: float = 0.8, test_ratio: float = 0.
     Returns:
         tuple: (train_data, test_data, val_data)
     '''
+    assert train_ratio + test_ratio < 1.0, "Train ratio and test ratio must sum to less than 1.0"
+    data_list = data_list.copy()
+    random.seed(seed)
+    random.shuffle(data_list)
+    
     total_samples = len(data_list)
     train_portion = int(total_samples * train_ratio)
     test_portion = int(total_samples * test_ratio)
