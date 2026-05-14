@@ -145,4 +145,3 @@ class GroupQueryAttention(nn.Module):
     def clear_cache(self):
         self.cache_key = None
         self.cache_value = None
-        print("KV cache cleared.")
