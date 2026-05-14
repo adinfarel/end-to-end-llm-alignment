@@ -17,6 +17,7 @@ from sftmodel.src.data.datasets import collate_fn
 from utils.common import load_yaml, save_model, load_model
 
 # --------------------------------
+BASEMODEL_CONFIG_PATH = 'basemodel/config.yaml'
 BASEMODEL_CONFIG = load_yaml('basemodel/config.yaml')
 PRETRAIN_MODEL_PATH = BASEMODEL_CONFIG['models']['training']['model_save_dir'] + 'best_model.pt'
 VOCAB_PATH = BASEMODEL_CONFIG['tokenizer']['vocab_path'] + 'vocab.json'
@@ -105,8 +106,8 @@ if __name__ == "__main__":
     
     # Initialize tokenizer and model
     print("Initializing model and tokenizer...")
-    tokenizer = AlmondTokenizerGPT(config_path=SFTMODEL_CONFIG_PATH)
-    model = AlmondGPTModel(config_path=SFTMODEL_CONFIG_PATH).to(DEVICE)
+    tokenizer = AlmondTokenizerGPT(config_path=BASEMODEL_CONFIG_PATH)
+    model = AlmondGPTModel(config_path=BASEMODEL_CONFIG_PATH).to(DEVICE)
     
     # Load vocab and state dict for fine-tuning
     print("Loading pre-trained model and tokenizer vocab...")
