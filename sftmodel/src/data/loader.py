@@ -63,9 +63,9 @@ def create_dataloaders(config: DataLoaderConfig, tokenizer: AlmondTokenizerGPT, 
     train_data, test_data, val_data = split_data(data_list, config.train_ratio, config.test_ratio)
     
     print(f"Creating InstructionDataset for train, test, and validation sets...")
-    train_dataset = InstructionDataset(train_data, tokenizer, device)
-    test_dataset = InstructionDataset(test_data, tokenizer, device)
-    val_dataset = InstructionDataset(val_data, tokenizer, device)
+    train_dataset = InstructionDataset(train_data, tokenizer)
+    test_dataset = InstructionDataset(test_data, tokenizer)
+    val_dataset = InstructionDataset(val_data, tokenizer)
     
     PAD_TOKEN_ID = tokenizer.single_byte_size + tokenizer.SPECIAL_TOKEN.index('<|pad|>')
     
