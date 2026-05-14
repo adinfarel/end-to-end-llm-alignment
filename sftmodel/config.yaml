@@ -1,0 +1,14 @@
+loader:
+  batch_size: 64
+  max_length: 128
+  raw_save_path: 'sftmodel/data/raw/'
+  processed_save_path: 'sftmodel/data/processed/'
+  train_ratio: 0.85
+  test_ratio: 0.1
+  shuffle: true
+  num_workers: 4
+
+finetune:
+  num_epochs: 3
+  learning_rate: 5e-5
+  model_finetune_path: 'sftmodel/model/finetuned/'
