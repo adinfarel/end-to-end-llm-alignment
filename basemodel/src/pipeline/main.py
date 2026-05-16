@@ -13,7 +13,7 @@ from basemodel.src.model.train import TrainConfig
 from utils.common import load_yaml
 
 # -------------------------------
-sys.path.inser(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 YAML_PATH = "basemodel/config.yaml"
 CONFIG = load_yaml(YAML_PATH)
 # -------------------------------
