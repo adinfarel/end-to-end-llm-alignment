@@ -33,15 +33,23 @@ class DpoDatasets(Dataset):
         chosen = item['chosen']
         rejected = item['rejected']
         
-        chosen_text = prompt + "\n" + chosen
-        rejected_text = prompt + "\n" + rejected
+        prompt_ids = self.tokenizer.encode(prompt + "\n")
+        prompt_len = len(prompt_ids)
+        
+        chosen_text = prompt + "\n" + chosen + "<|endoftext|>"
+        rejected_text = prompt + "\n" + rejected + "<|endoftext|>"
         
         chosen_ids = self.tokenizer.encode(chosen_text)
         reject_ids = self.tokenizer.encode(rejected_text)
         
+        chosen_labels = [-100] * prompt_len + chosen_ids[prompt_len:]
+        reject_labels = [-100] * prompt_len + reject_ids[prompt_len:]
+        
         return {
             "chosen_input_ids": chosen_ids,
-            "reject_input_ids": reject_ids
+            "rejected_input_ids": reject_ids,
+            "chosen_labels": chosen_labels,
+            "rejected_labels": reject_labels
         }
 
 def collate_fn(
@@ -51,14 +59,21 @@ def collate_fn(
 ):
     chosen_batch = []
     reject_batch = []
+    chosen_lbls_batch = []
+    reject_lbls_batch = []
     append_chosen = chosen_batch.append; append_reject = reject_batch.append
+    append_chsn_lbls = chosen_lbls_batch.append; append_rjct_lbls = reject_lbls_batch.append
     
     for item in batch:
         chosen_ids = item['chosen_input_ids'][:max_length]
-        reject_ids = item['reject_input_ids'][:max_length]
+        reject_ids = item['rejected_input_ids'][:max_length]
+        chosen_lbls = item['chosen_labels'][:max_length]
+        reject_lbls = item['rejected_labels'][:max_length]
         
         append_chosen(torch.tensor(chosen_ids, dtype=torch.long))
         append_reject(torch.tensor(reject_ids, dtype=torch.long))
+        append_chsn_lbls(torch.tensor(chosen_lbls, dtype=torch.long))
+        append_rjct_lbls(torch.tensor(reject_lbls, dtype=torch.long))
     
     chosen_batch = pad_sequence(
         sequences=chosen_batch,
@@ -72,7 +87,21 @@ def collate_fn(
         padding_value=pad_token_id
     )
     
+    chosen_batch_labels = pad_sequence(
+        sequences=chosen_lbls_batch,
+        batch_first=True,
+        padding_value=-100
+    )
+    
+    reject_batch_labels = pad_sequence(
+        sequences=reject_lbls_batch,
+        batch_first=True,
+        padding_value=-100
+    )
+    
     return {
         "chosen_input_ids": chosen_batch,
-        "reject_input_ids": reject_batch
+        "rejected_input_ids": reject_batch,
+        "chosen_labels": chosen_batch_labels,
+        "rejected_labels": reject_batch_labels
     }
