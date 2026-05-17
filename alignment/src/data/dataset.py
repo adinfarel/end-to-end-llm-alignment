@@ -33,11 +33,17 @@ class DpoDatasets(Dataset):
         chosen = item['chosen']
         rejected = item['rejected']
         
-        prompt_ids = self.tokenizer.encode(prompt + "\n")
+        formatted_prompt = (
+            "<|startoftext|><|user|>\n"
+            + prompt
+            + "\n<|assistant|>\n"
+        )
+        
+        prompt_ids = self.tokenizer.encode(formatted_prompt)
         prompt_len = len(prompt_ids)
         
-        chosen_text = prompt + "\n" + chosen + "<|endoftext|>"
-        rejected_text = prompt + "\n" + rejected + "<|endoftext|>"
+        chosen_text = formatted_prompt + "\n" + chosen + "<|endoftext|>"
+        rejected_text = formatted_prompt + "\n" + rejected + "<|endoftext|>"
         
         chosen_ids = self.tokenizer.encode(chosen_text)
         reject_ids = self.tokenizer.encode(rejected_text)
@@ -75,33 +81,22 @@ def collate_fn(
         append_chsn_lbls(torch.tensor(chosen_lbls, dtype=torch.long))
         append_rjct_lbls(torch.tensor(reject_lbls, dtype=torch.long))
     
-    chosen_batch = pad_sequence(
-        sequences=chosen_batch,
-        batch_first=True,
-        padding_value=pad_token_id,
-    )
+    all_inputs = chosen_batch + reject_batch
+    all_labels = chosen_lbls_batch + reject_lbls_batch
     
-    reject_batch = pad_sequence(
-        sequences=reject_batch,
-        batch_first=True,
-        padding_value=pad_token_id
-    )
+    padded_inputs = pad_sequence(all_inputs, batch_first=True, padding_value=pad_token_id)
+    padded_labels = pad_sequence(all_labels, batch_first=True, padding_value=-100)
     
-    chosen_batch_labels = pad_sequence(
-        sequences=chosen_lbls_batch,
-        batch_first=True,
-        padding_value=-100
-    )
+    half = len(batch)
+    chosen_inputs_padded = padded_inputs[:half]
+    rejected_inputs_padded = padded_inputs[half:]
     
-    reject_batch_labels = pad_sequence(
-        sequences=reject_lbls_batch,
-        batch_first=True,
-        padding_value=-100
-    )
+    chosen_labels_padded = padded_labels[:half]
+    rejected_labels_padded = padded_labels[half:]
     
     return {
-        "chosen_input_ids": chosen_batch,
-        "rejected_input_ids": reject_batch,
-        "chosen_labels": chosen_batch_labels,
-        "rejected_labels": reject_batch_labels
+        "chosen_input_ids": chosen_inputs_padded,
+        "rejected_input_ids": rejected_inputs_padded,
+        "chosen_labels": chosen_labels_padded,
+        "rejected_labels": rejected_labels_padded
     }
