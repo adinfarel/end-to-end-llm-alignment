@@ -190,8 +190,9 @@ making a dragon between goat who lived next bit.
 
 **DPO model:**
 ```
-[output more aligned with preference — more consistent structure,
-closer to the preferred response format]
+Lily and her family found a lovely princess in the park. One morning,
+Lily's mom told her to be careful not to hurt her up.
+Lily learned that her parents say sorry and not take things that don't belong to her.
 ```
 
 The difference is subtle but measurable from the loss curve: the model successfully shifted its output distribution toward chosen responses.
