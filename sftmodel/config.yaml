@@ -9,6 +9,6 @@ loader:
   num_workers: 4
 
 finetune:
-  num_epochs: 3
+  num_epochs: 15
   learning_rate: 5e-5
   model_finetune_path: 'sftmodel/model/finetuned/'
