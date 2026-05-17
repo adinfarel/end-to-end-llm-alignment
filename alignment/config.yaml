@@ -1,0 +1,18 @@
+alignment:
+  dpo_dataset_path: 'alignment/data/raw/dpo_dataset.json'
+  batch_size: 8
+  max_length: 128
+  shuffle: true
+  num_workers: 4
+  train_ratio: 0.85
+  test_ratio: 0.1
+  learning_rate: 5e-6
+  num_epochs: 5
+  save_dpo_models: 'alignment/model/dpo/dpo_model.pt'
+
+tokenizer:
+  tokenizer_path: 'basemodel/models/tokenizer/'
+
+models:
+  models_path: 'sftmodel/model/finetuned/'
+  config_models: 'basemodel/config.yaml'
