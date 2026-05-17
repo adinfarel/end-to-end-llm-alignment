@@ -3,7 +3,7 @@ alignment:
   batch_size: 8
   max_length: 128
   shuffle: true
-  num_workers: 4
+  num_workers: 2
   train_ratio: 0.85
   test_ratio: 0.1
   learning_rate: 5e-6
