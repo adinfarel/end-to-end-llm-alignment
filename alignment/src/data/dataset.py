@@ -42,8 +42,8 @@ class DpoDatasets(Dataset):
         prompt_ids = self.tokenizer.encode(formatted_prompt)
         prompt_len = len(prompt_ids)
         
-        chosen_text = formatted_prompt + "\n" + chosen + "<|endoftext|>"
-        rejected_text = formatted_prompt + "\n" + rejected + "<|endoftext|>"
+        chosen_text = formatted_prompt + chosen + "<|endoftext|>"
+        rejected_text = formatted_prompt + rejected + "<|endoftext|>"
         
         chosen_ids = self.tokenizer.encode(chosen_text)
         reject_ids = self.tokenizer.encode(rejected_text)
