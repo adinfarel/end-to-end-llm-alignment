@@ -95,12 +95,15 @@ def train_dpo(config: DPOTrainConfig):
     
     pi_model = load_model(pi_model, MODEL_PATH, device=DEVICE)
     ref_model = load_model(ref_model, MODEL_PATH, device=DEVICE)
+    pi_model = pi_model.to(DEVICE)
+    ref_model = ref_model.to(DEVICE)
+    
     tokenizer.load(
         vocab_path=VOCAB_PATH,
         merges_path=MERGES_PATH,
     )
     
-    optimizer = torch.optim.AdamW(pi_model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.AdamW(pi_model.parameters(), lr=float(config.learning_rate))
     scaler = torch.cuda.amp.GradScaler(enabled=(DTYPE == torch.float16))
     
     # FREEZE REF MODEL
@@ -136,7 +139,9 @@ def train_dpo(config: DPOTrainConfig):
                 # pi_logits_rejected, _ = pi_model(rejected_input_ids,  use_cache=False)
                 # ref_logits_rejected, _ = ref_model(rejected_input_ids,  use_cache=False)
                 all_pi_logits, _ = pi_model(all_input_ids, use_cache=False)
-                all_ref_logits, _ = ref_model(all_input_ids, use_cache=False)
+                
+                with torch.no_grad():
+                    all_ref_logits, _ = ref_model(all_input_ids, use_cache=False)
                 
                 pi_logits_chosen, pi_logits_rejected = all_pi_logits.chunk(2, dim=0)
                 ref_logits_chosen, ref_logits_rejected = all_ref_logits.chunk(2, dim=0)
@@ -172,7 +177,7 @@ def train_dpo(config: DPOTrainConfig):
     
     print('Training loop complete')
     
-    os.makedirs(config.save_model_dpo_path, exist_ok=True)
+    os.makedirs(os.path.dirname(config.save_model_dpo_path), exist_ok=True)
     checkpoint = {
         'model': pi_model.state_dict(),
         'epoch': config.num_epochs,

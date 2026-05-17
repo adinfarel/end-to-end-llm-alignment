@@ -18,14 +18,14 @@ def get_batch_logps(
     Calculate total log-probability by a full-sentence
     '''
     logits = logits[:, :-1, :]
-    labels = labels[:, 1:, :].clone()
+    labels = labels[:, 1:].clone()
     
     loss_mask = (labels != ignore_index) # Masking to ignore padding and prompt 
     
     labels[labels == ignore_index] = 0
     
     per_token_logits = F.log_softmax(logits, dim=-1)
-    per_token_logs = torch.gather(per_token_logits, dim=-1, index=labels.unsqueeze(-1).squeeze(-1))
+    per_token_logs = torch.gather(per_token_logits, dim=-1, index=labels.unsqueeze(-1)).squeeze(-1)
     
     per_token_logs *= loss_mask
     
