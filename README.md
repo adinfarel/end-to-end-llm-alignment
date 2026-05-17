@@ -154,5 +154,11 @@ Building this taught me things that reading papers alone never would:
 
 ---
 
+## Heartshare
+
+I think this is the best project i've ever create cause it combined fundamental, mathematically, system thinking, coding and pain (I think so), I know in the end the model getting worse, i'm expected that cause from early code this is project just for learn how pipeline LLM end to end
+even though this is not how actually occur at LLM Pipeline we know now, i'm grateful can understand full pipeline llm not just call API LLM. lmao, i'm not judge anyone that use API, sure... i think here i'm ended this project, i think i will explained this project soon if i get call
+interview from Big Tech (I hope that moment can be real T_T), i'm tried so i decided sleep now, Thank you for everyone that reading this project >.< .
+
 *Built by Adinfarel — AI Engineering track*  
 *"The goal was never to build something impressive. The goal was to understand."*
